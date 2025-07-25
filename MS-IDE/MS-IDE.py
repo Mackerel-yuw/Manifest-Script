@@ -18,6 +18,7 @@ def run_ms(ms_file):
     i = 0
     while i < len(lines):
         line = lines[i].strip()
+        print(f'[行{i+1}] {repr(line)}')
         if line.startswith('新建'):
             path = os.path.join(ms_dir, line[2:].strip())
             os.makedirs(os.path.dirname(path) or ms_dir, exist_ok=True)
@@ -57,6 +58,13 @@ def run_ms(ms_file):
                 shutil.rmtree(path)
             elif os.path.isfile(path):
                 os.remove(path)
+
+        elif line.startswith('移动 '):
+            _, src, dst = line.split(maxsplit=2)
+            src = os.path.join(ms_dir, src)
+            dst = os.path.join(ms_dir, dst)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.move(src, dst)
 
         elif line.startswith("运行 "):
             cmd = line[2:].strip()
@@ -102,7 +110,7 @@ class MsIDE(tk.Tk):
     def highlight(self):
         self.editor.tag_remove("kw", "1.0", "end")
         self.editor.tag_remove("str", "1.0", "end")
-        keywords = {"新建", "写入", "复制", "删除", "运行"}
+        keywords = {"新建", "写入", "复制", "删除", "运行", "移动"}
         lineno = 1
         for line in self.editor.get("1.0", "end-1c").splitlines(True):
             for kw in keywords:
@@ -180,6 +188,8 @@ class MsIDE(tk.Tk):
         if not self.ms_path:
             return
         try:
+            # 清屏：Windows 用 cls，其他用 clear
+            os.system('cls' if os.name == 'nt' else 'clear')
             run_ms(self.ms_path)
             self.flash_title("运行成功")
         except Exception as e:
